@@ -1,21 +1,22 @@
-package com.example.school.services;
+package com.example.school.services; // Ajuste o pacote
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.school.dtos.CourseRequest;
 import com.example.school.dtos.CourseResponse;
 import com.example.school.entities.Course;
 import com.example.school.entities.Student;
-import com.example.school.repositories.StudentRepository;
 import com.example.school.entities.Teacher;
-import com.example.school.repositories.TeacherRepository;
 import com.example.school.mappers.CourseMapper;
 import com.example.school.repositories.CourseRepository;
+import com.example.school.repositories.StudentRepository;
+import com.example.school.repositories.TeacherRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -24,84 +25,97 @@ public class CourseService {
 
     @Autowired
     private CourseRepository repository;
-
+    
     @Autowired
     private TeacherRepository teacherRepository;
-
+    
     @Autowired
     private StudentRepository studentRepository;
 
+    @Transactional(readOnly = true)
     public List<CourseResponse> getCourses() {
-        return repository.findAll().stream()
-                         .map(CourseMapper::toResponse)
-                         .toList();
+        return repository.findAll()
+                .stream()
+                .map(CourseMapper::toDTO)
+                .toList();
     }
 
+    @Transactional(readOnly = true)
     public CourseResponse getCourseById(long id) {
         return repository.findById(id)
-                         .map(CourseMapper::toResponse)
-                         .orElseThrow(() -> new EntityNotFoundException("Course not found"));
+                .map(CourseMapper::toDTO)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found"));
     }
 
+    @Transactional
+    public void deleteCourseById(long id) {
+        if (repository.existsById(id))
+            repository.deleteById(id);
+        else
+            throw new EntityNotFoundException("Course not found");
+    }
+
+    @Transactional
     public CourseResponse saveCourse(CourseRequest request) {
         Course course = CourseMapper.toEntity(request);
-
-        if (request.teacherId() != null) {
-            Teacher teacher = teacherRepository.findById(request.teacherId())
-                    .orElseThrow(() -> new EntityNotFoundException("Teacher not found"));
-            course.setTeacher(teacher);
+        
+        // Associa Teachers
+        if (request.teacherIds() != null && !request.teacherIds().isEmpty()) {
+            Set<Teacher> teachers = teacherRepository.findAllById(request.teacherIds())
+                .stream().collect(Collectors.toSet());
+            
+            if (teachers.size() != request.teacherIds().size()) {
+                throw new EntityNotFoundException("One or more Teachers not found");
+            }
+            course.setTeachers(teachers);
         }
-
+        
+        // Associa Students
         if (request.studentIds() != null && !request.studentIds().isEmpty()) {
-            Set<Student> students = new HashSet<>();
-            for (Long id : request.studentIds()) {
-                Student s = studentRepository.findById(id)
-                        .orElseThrow(() -> new EntityNotFoundException("Student not found: " + id));
-                students.add(s);
+            Set<Student> students = studentRepository.findAllById(request.studentIds())
+                .stream().collect(Collectors.toSet());
+            
+            if (students.size() != request.studentIds().size()) {
+                throw new EntityNotFoundException("One or more Students not found");
             }
             course.setStudents(students);
         }
-
-        return CourseMapper.toResponse(repository.save(course));
+        
+        Course savedCourse = repository.save(course);
+        return CourseMapper.toDTO(savedCourse);
     }
 
-    public void updateCourse(long id, CourseRequest request) {
+    @Transactional
+    public void updateCourse(CourseRequest request, long id) {
         Course course = repository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Course not found"));
-
+            .orElseThrow(() -> new EntityNotFoundException("Course not found"));
+        
         course.setName(request.name());
-
-        if (request.teacherId() != null) {
-            Teacher teacher = teacherRepository.findById(request.teacherId())
-                    .orElseThrow(() -> new EntityNotFoundException("Teacher not found"));
-            course.setTeacher(teacher);
-        } else {
-            course.setTeacher(null);
+        
+        // Atualiza Teachers
+        course.getTeachers().clear();
+        if (request.teacherIds() != null && !request.teacherIds().isEmpty()) {
+            Set<Teacher> teachers = teacherRepository.findAllById(request.teacherIds())
+                .stream().collect(Collectors.toSet());
+            
+            if (teachers.size() != request.teacherIds().size()) {
+                throw new EntityNotFoundException("One or more Teachers not found");
+            }
+            course.setTeachers(teachers);
         }
-
-        if (request.studentIds() != null) {
-            Set<Student> students = new HashSet<>();
-            for (Long sId : request.studentIds()) {
-                Student s = studentRepository.findById(sId)
-                        .orElseThrow(() -> new EntityNotFoundException("Student not found: " + sId));
-                students.add(s);
+        
+        // Atualiza Students
+        course.getStudents().clear();
+        if (request.studentIds() != null && !request.studentIds().isEmpty()) {
+            Set<Student> students = studentRepository.findAllById(request.studentIds())
+                .stream().collect(Collectors.toSet());
+            
+            if (students.size() != request.studentIds().size()) {
+                throw new EntityNotFoundException("One or more Students not found");
             }
             course.setStudents(students);
-        } else {
-            course.getStudents().clear();
         }
-
+        
         repository.save(course);
-    }
-
-    public void deleteCourse(long id) {
-        if (repository.existsById(id)) repository.deleteById(id);
-        else throw new EntityNotFoundException("Course not found");
-    }
-
-    public List<CourseResponse> getCoursesByTeacher(long teacherId) {
-        return repository.findByTeacherId(teacherId).stream()
-                         .map(CourseMapper::toResponse)
-                         .toList();
     }
 }

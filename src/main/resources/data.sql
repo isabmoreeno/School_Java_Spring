@@ -1,36 +1,53 @@
--- data.sql CORRIGIDO (Versão One-to-Many para Curso/Professor)
+-- ############################################# 
+-- 1. inserção de professores (teachers)
+--    colunas: (name, email)
+-- #############################################
 
--- 1. Teachers (IDs 1, 2, 3)
-INSERT INTO TBL_TEACHER (name) VALUES ('Professor João');
-INSERT INTO TBL_TEACHER (name) VALUES ('Professora Maria');
-INSERT INTO TBL_TEACHER (name) VALUES ('Professor Carlos');
+insert into tb_teacher (name, email) values ('carlos silva', 'carlos@fatec.edu');
+insert into tb_teacher (name, email) values ('marina souza', 'marina@fatec.edu');
+insert into tb_teacher (name, email) values ('pedro santos', 'pedro@fatec.edu');
 
--- 2. Students (IDs 1, 2, 3, 4)
-INSERT INTO TBL_STUDENT (name) VALUES ('Aluno Pedro');
-INSERT INTO TBL_STUDENT (name) VALUES ('Aluna Ana');
-INSERT INTO TBL_STUDENT (name) VALUES ('Aluno Lucas');
-INSERT INTO TBL_STUDENT (name) VALUES ('Aluna Sofia');
+-- ids gerados: 1, 2, 3
 
--- 3. Courses (Corrigido: 'name' no lugar de 'title' e 'teacher_id' adicionado)
--- Course 1 (Professor João - id=1)
-INSERT INTO TBL_COURSE (name, teacher_id) VALUES ('Spring Boot Avançado', 1);
+-- #############################################
+-- 2. inserção de estudantes (students)
+--    colunas: (name, email)
+-- #############################################
 
--- Course 2 (Professor Carlos - id=3)
-INSERT INTO TBL_COURSE (name, teacher_id) VALUES ('Introdução a SQL', 3);
+insert into tb_student (name, email) values ('isabela ferreira', 'isa@email.com');
+insert into tb_student (name, email) values ('bruna oliveira', 'bru@email.com');
+insert into tb_student (name, email) values ('guilherme costa', 'gui@email.com');
 
--- Course 3 (Professora Maria - id=2)
-INSERT INTO TBL_COURSE (name, teacher_id) VALUES ('Desenvolvimento Web', 2);
+-- ids gerados: 1, 2, 3
 
+-- #############################################
+-- 3. inserção de cursos (courses)
+--    colunas: (name)
+-- #############################################
 
--- 4. TBL_COURSE_STUDENT (Relacionamento Many-to-Many) - OK
--- Course 1 (Spring Boot) com Pedro (id=1) e Ana (id=2)
-INSERT INTO TBL_COURSE_STUDENT (course_id, student_id) VALUES (1, 1);
-INSERT INTO TBL_COURSE_STUDENT (course_id, student_id) VALUES (1, 2);
+insert into tb_course (name) values ('engenharia de software');
+insert into tb_course (name) values ('banco de dados');
+insert into tb_course (name) values ('sistemas operacionais');
 
--- Course 3 (Desenvolvimento Web) com todos os 4 estudantes
-INSERT INTO TBL_COURSE_STUDENT (course_id, student_id) VALUES (3, 1);
-INSERT INTO TBL_COURSE_STUDENT (course_id, student_id) VALUES (3, 2);
-INSERT INTO TBL_COURSE_STUDENT (course_id, student_id) VALUES (3, 3);
-INSERT INTO TBL_COURSE_STUDENT (course_id, student_id) VALUES (3, 4);
+-- ids gerados: 1, 2, 3
 
--- **Atenção:** A tabela TBL_COURSE_TEACHER foi removida pois a coluna 'teacher_id' já existe em TBL_COURSE.
+-- #############################################
+-- 4. estabelecimento de relacionamentos many-to-many
+-- #############################################
+
+-- tabela: course_teacher (liga cursos a professores)
+-- padrão: (course_id, teacher_id)
+
+insert into course_teacher (course_id, teacher_id) values (1, 1);
+insert into course_teacher (course_id, teacher_id) values (1, 2);
+insert into course_teacher (course_id, teacher_id) values (2, 3);
+insert into course_teacher (course_id, teacher_id) values (3, 1);
+
+-- tabela: course_student (liga cursos a estudantes)
+-- padrão: (course_id, student_id)
+
+insert into course_student (course_id, student_id) values (1, 1);
+insert into course_student (course_id, student_id) values (1, 2);
+insert into course_student (course_id, student_id) values (2, 1);
+insert into course_student (course_id, student_id) values (3, 2);
+insert into course_student (course_id, student_id) values (3, 3);

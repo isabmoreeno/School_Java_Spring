@@ -1,37 +1,31 @@
 package com.example.school.entities;
 
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-
-import com.example.school.entities.Course;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "TBL_TEACHER")
-public class Teacher implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Table(name = "tb_teacher")
+public class Teacher {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    private String name; // Mapeado como teacher_name
 
-    @OneToMany(mappedBy = "teacher")
-    private Set<Course> courses = new HashSet<>();
+    @Column(name = "email", unique = true, nullable = false)
+    private String email;
 
+    // Relacionamento inverso é ignorado aqui para manter a Entidade limpa
+    // e evitar o loop de serialização. O mapeamento está em Course.java
+
+    // Construtor Vazio
     public Teacher() {}
 
-    public Teacher(Long id, String name) {
+    // Construtor com Campos
+    public Teacher(Long id, String name, String email) {
         this.id = id;
         this.name = name;
+        this.email = email;
     }
 
     // Getters e Setters
@@ -39,17 +33,6 @@ public class Teacher implements Serializable {
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public Set<Course> getCourses() { return courses; }
-    public void setCourses(Set<Course> courses) { this.courses = courses; }
-
-    @Override
-    public int hashCode() { return id != null ? id.hashCode() : 0; }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Teacher other = (Teacher) obj;
-        return id != null && id.equals(other.id);
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

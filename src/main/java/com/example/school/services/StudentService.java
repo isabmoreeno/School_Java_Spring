@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.school.dtos.StudentRequest;
 import com.example.school.dtos.StudentResponse;
@@ -19,34 +20,42 @@ public class StudentService {
     @Autowired
     private StudentRepository repository;
 
+    @Transactional(readOnly = true)
     public List<StudentResponse> getStudents() {
         return repository.findAll()
-                         .stream()
-                         .map(StudentMapper::toDTO)
-                         .toList();
+                .stream()
+                .map(StudentMapper::toDTO)
+                .toList();
     }
 
+    @Transactional(readOnly = true)
     public StudentResponse getStudentById(long id) {
         return repository.findById(id)
-                         .map(StudentMapper::toDTO)
-                         .orElseThrow(() -> new EntityNotFoundException("Student not found"));
+                .map(StudentMapper::toDTO)
+                .orElseThrow(() -> new EntityNotFoundException("Student not found"));
     }
 
+    @Transactional
+    public void deleteStudentById(long id) {
+        if (repository.existsById(id))
+            repository.deleteById(id);
+        else
+            throw new EntityNotFoundException("Student not found");
+    }
+
+    @Transactional
     public StudentResponse saveStudent(StudentRequest request) {
         Student student = StudentMapper.toEntity(request);
-        Student saved = repository.save(student);
-        return StudentMapper.toDTO(saved);
+        Student savedStudent = repository.save(student);
+        return StudentMapper.toDTO(savedStudent);
     }
 
-    public void updateStudent(long id, StudentRequest request) {
+    @Transactional
+    public void updateStudent(StudentRequest request, long id) {
         Student student = repository.findById(id)
-                                    .orElseThrow(() -> new EntityNotFoundException("Student not found"));
-        student.setName(request.name());
+            .orElseThrow(() -> new EntityNotFoundException("Student not found"));
+        
+        StudentMapper.updateEntity(student, request);
         repository.save(student);
-    }
-
-    public void deleteStudent(long id) {
-        if (repository.existsById(id)) repository.deleteById(id);
-        else throw new EntityNotFoundException("Student not found");
     }
 }

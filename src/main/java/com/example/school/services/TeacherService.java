@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.school.dtos.TeacherRequest;
 import com.example.school.dtos.TeacherResponse;
@@ -19,34 +20,42 @@ public class TeacherService {
     @Autowired
     private TeacherRepository repository;
 
+    @Transactional(readOnly = true)
     public List<TeacherResponse> getTeachers() {
         return repository.findAll()
-                         .stream()
-                         .map(TeacherMapper::toDTO)
-                         .toList();
+                .stream()
+                .map(TeacherMapper::toDTO)
+                .toList();
     }
 
+    @Transactional(readOnly = true)
     public TeacherResponse getTeacherById(long id) {
         return repository.findById(id)
-                         .map(TeacherMapper::toDTO)
-                         .orElseThrow(() -> new EntityNotFoundException("Teacher not found"));
+                .map(TeacherMapper::toDTO)
+                .orElseThrow(() -> new EntityNotFoundException("Teacher not found"));
     }
 
+    @Transactional
+    public void deleteTeacherById(long id) {
+        if (repository.existsById(id))
+            repository.deleteById(id);
+        else
+            throw new EntityNotFoundException("Teacher not found");
+    }
+
+    @Transactional
     public TeacherResponse saveTeacher(TeacherRequest request) {
         Teacher teacher = TeacherMapper.toEntity(request);
-        Teacher saved = repository.save(teacher);
-        return TeacherMapper.toDTO(saved);
+        Teacher savedTeacher = repository.save(teacher);
+        return TeacherMapper.toDTO(savedTeacher);
     }
 
-    public void updateTeacher(long id, TeacherRequest request) {
+    @Transactional
+    public void updateTeacher(TeacherRequest request, long id) {
         Teacher teacher = repository.findById(id)
-                                    .orElseThrow(() -> new EntityNotFoundException("Teacher not found"));
-        teacher.setName(request.name());
+            .orElseThrow(() -> new EntityNotFoundException("Teacher not found"));
+        
+        TeacherMapper.updateEntity(teacher, request);
         repository.save(teacher);
-    }
-
-    public void deleteTeacher(long id) {
-        if (repository.existsById(id)) repository.deleteById(id);
-        else throw new EntityNotFoundException("Teacher not found");
     }
 }
