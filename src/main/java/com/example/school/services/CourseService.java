@@ -1,12 +1,12 @@
 package com.example.school.services; // Ajuste o pacote
 
+import java.util.HashSet; // Adicionado para inicializar Sets
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional; // Mantido para segurança, mas geralmente pode ser removido se o @Service tiver a configuração padrão
 
 import com.example.school.dtos.CourseRequest;
 import com.example.school.dtos.CourseResponse;
@@ -55,28 +55,29 @@ public class CourseService {
             throw new EntityNotFoundException("Course not found");
     }
 
+    // --- SAVE COURSE (Estrutura parecida com saveProduct) ---
     @Transactional
     public CourseResponse saveCourse(CourseRequest request) {
         Course course = CourseMapper.toEntity(request);
         
-        // Associa Teachers
+        // Associa Teachers (Usando o loop forEach do modelo ProductService)
         if (request.teacherIds() != null && !request.teacherIds().isEmpty()) {
-            Set<Teacher> teachers = teacherRepository.findAllById(request.teacherIds())
-                .stream().collect(Collectors.toSet());
-            
-            if (teachers.size() != request.teacherIds().size()) {
-                throw new EntityNotFoundException("One or more Teachers not found");
+            Set<Teacher> teachers = new HashSet<>();
+            for (Long teacherId : request.teacherIds()) {
+                Teacher teacher = teacherRepository.findById(teacherId)
+                    .orElseThrow(() -> new EntityNotFoundException("Teacher not found: " + teacherId));
+                teachers.add(teacher);
             }
             course.setTeachers(teachers);
         }
         
-        // Associa Students
+        // Associa Students (Usando o loop forEach do modelo ProductService)
         if (request.studentIds() != null && !request.studentIds().isEmpty()) {
-            Set<Student> students = studentRepository.findAllById(request.studentIds())
-                .stream().collect(Collectors.toSet());
-            
-            if (students.size() != request.studentIds().size()) {
-                throw new EntityNotFoundException("One or more Students not found");
+            Set<Student> students = new HashSet<>();
+            for (Long studentId : request.studentIds()) {
+                Student student = studentRepository.findById(studentId)
+                    .orElseThrow(() -> new EntityNotFoundException("Student not found: " + studentId));
+                students.add(student);
             }
             course.setStudents(students);
         }
@@ -85,6 +86,7 @@ public class CourseService {
         return CourseMapper.toDTO(savedCourse);
     }
 
+    // --- UPDATE COURSE (Estrutura parecida com updateProduct) ---
     @Transactional
     public void updateCourse(CourseRequest request, long id) {
         Course course = repository.findById(id)
@@ -93,27 +95,32 @@ public class CourseService {
         course.setName(request.name());
         
         // Atualiza Teachers
-        course.getTeachers().clear();
-        if (request.teacherIds() != null && !request.teacherIds().isEmpty()) {
-            Set<Teacher> teachers = teacherRepository.findAllById(request.teacherIds())
-                .stream().collect(Collectors.toSet());
-            
-            if (teachers.size() != request.teacherIds().size()) {
-                throw new EntityNotFoundException("One or more Teachers not found");
+        if (request.teacherIds() != null) {
+            Set<Teacher> teachers = new HashSet<>();
+            for (Long teacherId : request.teacherIds()) {
+                Teacher teacher = teacherRepository.findById(teacherId)
+                    .orElseThrow(() -> new EntityNotFoundException("Teacher not found: " + teacherId));
+                teachers.add(teacher);
             }
             course.setTeachers(teachers);
+        } else {
+            // Se tagIds fosse null, no ProductService ele limpa as tags.
+            // Aqui fazemos o mesmo para manter a consistência do PUT.
+            course.getTeachers().clear(); 
         }
         
         // Atualiza Students
-        course.getStudents().clear();
-        if (request.studentIds() != null && !request.studentIds().isEmpty()) {
-            Set<Student> students = studentRepository.findAllById(request.studentIds())
-                .stream().collect(Collectors.toSet());
-            
-            if (students.size() != request.studentIds().size()) {
-                throw new EntityNotFoundException("One or more Students not found");
+        if (request.studentIds() != null) {
+            Set<Student> students = new HashSet<>();
+            for (Long studentId : request.studentIds()) {
+                Student student = studentRepository.findById(studentId)
+                    .orElseThrow(() -> new EntityNotFoundException("Student not found: " + studentId));
+                students.add(student);
             }
             course.setStudents(students);
+        } else {
+            // Limpa os estudantes se a lista vier null (consistente com o modelo)
+            course.getStudents().clear(); 
         }
         
         repository.save(course);

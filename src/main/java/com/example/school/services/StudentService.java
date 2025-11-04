@@ -45,6 +45,7 @@ public class StudentService {
 
     @Transactional
     public StudentResponse saveStudent(StudentRequest request) {
+        // Segue o padrão de mapeamento para salvar
         Student student = StudentMapper.toEntity(request);
         Student savedStudent = repository.save(student);
         return StudentMapper.toDTO(savedStudent);
@@ -55,7 +56,11 @@ public class StudentService {
         Student student = repository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Student not found"));
         
-        StudentMapper.updateEntity(student, request);
+        // --- Estrutura 'verbosa' do update, espelhando o CourseService ---
+        student.setName(request.name());
+        student.setEmail(request.email());
+        // -----------------------------------------------------------------
+
         repository.save(student);
     }
 }

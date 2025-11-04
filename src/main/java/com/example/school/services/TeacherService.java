@@ -45,6 +45,7 @@ public class TeacherService {
 
     @Transactional
     public TeacherResponse saveTeacher(TeacherRequest request) {
+        // Segue o padrão de mapeamento para salvar
         Teacher teacher = TeacherMapper.toEntity(request);
         Teacher savedTeacher = repository.save(teacher);
         return TeacherMapper.toDTO(savedTeacher);
@@ -55,7 +56,11 @@ public class TeacherService {
         Teacher teacher = repository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Teacher not found"));
         
-        TeacherMapper.updateEntity(teacher, request);
+        // --- Estrutura 'verbosa' do update, espelhando o CourseService ---
+        teacher.setName(request.name());
+        teacher.setEmail(request.email());
+        // -----------------------------------------------------------------
+
         repository.save(teacher);
     }
 }
